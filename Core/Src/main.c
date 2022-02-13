@@ -116,10 +116,15 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+  int i = 0;
   while (1)
   {
     /* USER CODE END WHILE */
+	  HAL_Delay(5*1000);
 
+	  ov9655_MirrorFlipConfig(CAMERA_I2C_ADDRESS, i++);
+	  if(i == 5)
+		  i = 0;
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
