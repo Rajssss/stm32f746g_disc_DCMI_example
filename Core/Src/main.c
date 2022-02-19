@@ -17,12 +17,14 @@
   */
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
+#include <string.h>
 #include "main.h"
 #include "stm32f7xx_hal.h"
 #include "stm32746g_discovery.h"
 #include "stm32746g_discovery_lcd.h"
 #include "stm32746g_discovery_camera.h"
 #include "ov9655.h"
+#include "multi_heap.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
@@ -55,7 +57,7 @@ static void MPU_Config(void);
 static void LCD_LL_ConvertLineToARGB8888(void *pSrc, void *pDst);
 
 /* USER CODE BEGIN PFP */
-
+uint8_t  *ptrLcd;
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -95,12 +97,14 @@ int main(void)
 
   /* USER CODE BEGIN 2 */
   BSP_LCD_Init();
+  ptrLcd = (uint8_t *)malloc_ext(BSP_LCD_GetXSize()*BSP_LCD_GetYSize());
+  memset(ptrLcd, 0, BSP_LCD_GetXSize()*BSP_LCD_GetYSize());
 
-  uint32_t  *ptrLcd = (uint32_t*)(LCD_FRAME_BUFFER);
+/*  uint32_t  *ptrLcd = (uint32_t*)(LCD_FRAME_BUFFER);
   for (int i=0; i<(BSP_LCD_GetXSize()*BSP_LCD_GetYSize()); i++)
   {
     ptrLcd[i]=0;
-  }
+  }*/
 //  BSP_LCD_LayerDefaultInit(1, LCD_FRAME_BUFFER);
   BSP_LCD_LayerRgb565Init(1, LCD_FRAME_BUFFER);
 
