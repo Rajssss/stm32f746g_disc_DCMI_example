@@ -95,12 +95,14 @@ int main(void)
 
   /* USER CODE BEGIN 2 */
   BSP_LCD_Init();
+
   uint32_t  *ptrLcd = (uint32_t*)(LCD_FRAME_BUFFER);
   for (int i=0; i<(BSP_LCD_GetXSize()*BSP_LCD_GetYSize()); i++)
   {
     ptrLcd[i]=0;
   }
-  BSP_LCD_LayerDefaultInit(1, LCD_FRAME_BUFFER);
+//  BSP_LCD_LayerDefaultInit(1, LCD_FRAME_BUFFER);
+  BSP_LCD_LayerRgb565Init(1, LCD_FRAME_BUFFER);
 
 //  BSP_LCD_LayerRgb565Init(1, (uint32_t)LCD_FRAME_BUFFER);
   BSP_LCD_SetLayerWindow(1, xoffset, yoffset, xsize, ysize);
@@ -109,6 +111,8 @@ int main(void)
   BSP_LCD_SetLayerWindow(1, xoffset, yoffset, xsize, ysize);
 
   BSP_CAMERA_Init(CAMERA_R480x272);
+
+  ov9655_MirrorFlipConfig(CAMERA_I2C_ADDRESS, CAMERA_FLIP);
 
   BSP_CAMERA_ContinuousStart((uint8_t *)CAMERA_FRAME_BUFFER);
 
@@ -120,12 +124,15 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
-	  HAL_Delay(5*1000);
+	  HAL_Delay(3*1000);
 
-	  ov9655_MirrorFlipConfig(CAMERA_I2C_ADDRESS, i++);
+/*	  ov9655_MirrorFlipConfig(CAMERA_I2C_ADDRESS, i++);
 	  if(i == 5)
+	  {
 		  i = 0;
-    /* USER CODE BEGIN 3 */
+	  }*/
+
+	  /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
 }
@@ -143,7 +150,8 @@ static void LCD_LL_ConvertLineToARGB8888(void *pSrc, void *pDst)
 {
     /* Configure the DMA2D Mode, Color Mode and output offset */
     Dma2dHandle.Init.Mode         = DMA2D_M2M_PFC;
-    Dma2dHandle.Init.ColorMode    = DMA2D_OUTPUT_ARGB8888;
+//    Dma2dHandle.Init.ColorMode    = DMA2D_OUTPUT_ARGB8888;
+    Dma2dHandle.Init.ColorMode    = DMA2D_OUTPUT_RGB565;
     Dma2dHandle.Init.OutputOffset = 0x0;
 
     /* Foreground Configuration */
@@ -189,7 +197,7 @@ void BSP_CAMERA_LineEventCallback(void)
 {
   static uint32_t tmp, tmp2, counter;
 
-  if(ysize > counter)
+/*  if(ysize > counter)
   {
     LCD_LL_ConvertLineToARGB8888((uint32_t *)(CAMERA_FRAME_BUFFER + tmp), (uint32_t *)(LCD_FRAME_BUFFER + tmp2));
     tmp  = tmp + xsize*sizeof(uint16_t);
@@ -201,7 +209,22 @@ void BSP_CAMERA_LineEventCallback(void)
     tmp = 0;
     tmp2 = 0;
     counter = 0;
-  }
+  }*/
+
+    if(ysize > counter)
+    {
+      LCD_LL_ConvertLineToARGB8888((uint32_t *)(CAMERA_FRAME_BUFFER + tmp), (uint32_t *)(LCD_FRAME_BUFFER + tmp2));
+      tmp  = tmp + xsize*sizeof(uint16_t);
+      tmp2 = tmp2 + xsize*sizeof(uint16_t);
+      counter++;
+    }
+    else
+    {
+      tmp = 0;
+      tmp2 = 0;
+      counter = 0;
+    }
+
 }
 
 

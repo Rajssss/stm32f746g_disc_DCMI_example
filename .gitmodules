@@ -1,0 +1,4 @@
+[submodule "Drivers/ov9655"]
+	path = Drivers/ov9655
+	url = git@github.com:Rajssss/ov9655_mod.git
+	branch = master
