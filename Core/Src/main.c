@@ -57,7 +57,8 @@ static void MPU_Config(void);
 static void LCD_LL_ConvertLineToARGB8888(void *pSrc, void *pDst);
 
 /* USER CODE BEGIN PFP */
-uint8_t  *ptrLcd;
+uint8_t *ptrLcd;
+uint8_t *ptrCam;
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -97,8 +98,12 @@ int main(void)
 
   /* USER CODE BEGIN 2 */
   BSP_LCD_Init();
-  ptrLcd = (uint8_t *)malloc_ext(BSP_LCD_GetXSize()*BSP_LCD_GetYSize());
-  memset(ptrLcd, 0, BSP_LCD_GetXSize()*BSP_LCD_GetYSize());
+
+  ptrLcd = malloc_ext(480*272*2);
+  memset(ptrLcd, 0, 480*272*2);
+
+  ptrCam = malloc_ext(480*272*2);
+  memset(ptrCam, 0, 480*272*2);
 
 /*  uint32_t  *ptrLcd = (uint32_t*)(LCD_FRAME_BUFFER);
   for (int i=0; i<(BSP_LCD_GetXSize()*BSP_LCD_GetYSize()); i++)
@@ -106,7 +111,7 @@ int main(void)
     ptrLcd[i]=0;
   }*/
 //  BSP_LCD_LayerDefaultInit(1, LCD_FRAME_BUFFER);
-  BSP_LCD_LayerRgb565Init(1, LCD_FRAME_BUFFER);
+  BSP_LCD_LayerRgb565Init(1, (uint32_t)ptrLcd);
 
 //  BSP_LCD_LayerRgb565Init(1, (uint32_t)LCD_FRAME_BUFFER);
   BSP_LCD_SetLayerWindow(1, xoffset, yoffset, xsize, ysize);
@@ -118,7 +123,7 @@ int main(void)
 
   ov9655_MirrorFlipConfig(CAMERA_I2C_ADDRESS, CAMERA_FLIP);
 
-  BSP_CAMERA_ContinuousStart((uint8_t *)CAMERA_FRAME_BUFFER);
+  BSP_CAMERA_ContinuousStart((uint8_t *)ptrCam);
 
   /* USER CODE END 2 */
 
@@ -170,7 +175,7 @@ static void LCD_LL_ConvertLineToARGB8888(void *pSrc, void *pDst)
 //    Dma2dHandle.LayerCfg[0].InputColorMode = DMA2D_INPUT_RGB565;
 //    Dma2dHandle.LayerCfg[0].InputOffset = 0x0;
 
-    Dma2dHandle.Instance   = DMA2D;
+    Dma2dHandle.Instance  = DMA2D;
 
     /* DMA2D Initialization */
     if(HAL_DMA2D_Init(&Dma2dHandle) == HAL_OK)
@@ -215,9 +220,10 @@ void BSP_CAMERA_LineEventCallback(void)
     counter = 0;
   }*/
 
-    if(ysize > counter)
+  // Process cam data per line(X)
+/*    if(ysize > counter)
     {
-      LCD_LL_ConvertLineToARGB8888((uint32_t *)(CAMERA_FRAME_BUFFER + tmp), (uint32_t *)(LCD_FRAME_BUFFER + tmp2));
+      LCD_LL_ConvertLineToARGB8888((uint32_t *)(ptrCam + tmp), (uint32_t *)(ptrLcd + tmp2));
       tmp  = tmp + xsize*sizeof(uint16_t);
       tmp2 = tmp2 + xsize*sizeof(uint16_t);
       counter++;
@@ -227,10 +233,41 @@ void BSP_CAMERA_LineEventCallback(void)
       tmp = 0;
       tmp2 = 0;
       counter = 0;
-    }
+    }*/
 
 }
 
+
+void BSP_CAMERA_FrameEventCallback(void)
+{
+	// Process cam data per Per Frame(X*Y)
+    Dma2dHandle.Init.Mode         = DMA2D_M2M_PFC;
+//    Dma2dHandle.Init.ColorMode    = DMA2D_OUTPUT_ARGB8888;
+    Dma2dHandle.Init.ColorMode    = DMA2D_OUTPUT_RGB565;
+    Dma2dHandle.Init.OutputOffset = 0x0;
+
+    Dma2dHandle.LayerCfg[1].AlphaMode = DMA2D_NO_MODIF_ALPHA;
+    Dma2dHandle.LayerCfg[1].InputAlpha = 0xFF;
+    Dma2dHandle.LayerCfg[1].InputColorMode = DMA2D_INPUT_RGB565;
+    Dma2dHandle.LayerCfg[1].InputOffset = 0x0;
+
+    Dma2dHandle.Instance  = DMA2D;
+
+    if(HAL_DMA2D_Init(&Dma2dHandle) == HAL_OK)
+    {
+      if(HAL_DMA2D_ConfigLayer(&Dma2dHandle, 1) == HAL_OK)
+      {
+        if (HAL_DMA2D_Start(&Dma2dHandle, (uint32_t)ptrCam, (uint32_t)ptrLcd, xsize, ysize) == HAL_OK)
+        {
+          HAL_DMA2D_PollForTransfer(&Dma2dHandle, 10);
+        }
+      }
+    }
+    else
+    {
+      while(1);
+    }
+}
 
 void MPU_Config(void)
 {

@@ -167,7 +167,7 @@ The setting method:
 						  { (uint8_t *) 0x20000000, 0x10000       },\
 						  { (uint8_t *) &ucHeap0, sizeof(ucHeap0) },\
 						  { (uint8_t *) 0x2004C000, 0x4000        },\
-						  { (uint8_t *) 0x60000000, 0x800000    }};		// 0x60000000  //0xC0000000
+						  { (uint8_t *) 0xC0000000, 0x800000    }};		// 0x60000000  //0xC0000000
 /*
 It is possible to search and reserve free memory from several memory regions.
 - pvPortMalloc, vPortFree, xPortGetFreeHeapSize : freertos memory region
